@@ -1,0 +1,10 @@
+__pycache__
+*.pyc
+
+# ANTLR4
+*.interp
+*.tokens
+
+# IDE
+.idea
+
