@@ -1,26 +1,8 @@
-import antlr4
-
+import json
 import sys
 
-from grammar.DaedalusLexer import DaedalusLexer
-from grammar.DaedalusParser import DaedalusParser
+from data_sniffer import DataSniffer
 from src_helper import SrcHelper
-from syntax_error_listener import SyntaxErrorListener
-
-
-def parse(path):
-    input_stream = antlr4.FileStream(path, encoding='windows-1250')
-    lexer = DaedalusLexer(input_stream)
-    token_stream = antlr4.CommonTokenStream(lexer)
-    parser = DaedalusParser(token_stream)
-
-    listener = SyntaxErrorListener()
-    parser.addErrorListener(listener)
-    parser.daedalusFile()
-    if listener.errors_count:
-        msg = f"{listener.errors_count} syntax error generated"
-        print(msg, file=sys.stderr)
-        return
 
 
 def main():
@@ -28,9 +10,18 @@ def main():
 
     src_helper = SrcHelper(src_path)
     files_paths = src_helper.get_daedalus_files()
+
+    data_sniffer = DataSniffer()
+    # files_paths = [
+    #     '/home/kisioj/Desktop/TheHistoryOfKhorinis/Scripts/Content/Story/NPC/BAU_8002_Allan.d',
+    #     '/home/kisioj/Desktop/TheHistoryOfKhorinis/Scripts/Content/Story/Dialoge/DIA_BAU_8002_Allan.d',
+    # ]
     for i, file_path in enumerate(files_paths):
         print(f'\r{i}/{len(files_paths)} {file_path}')
-        parse(file_path)
+        data_sniffer.sniff(file_path)
+
+    with open('output.json', 'w') as file:
+        file.write(json.dumps(data_sniffer.get_data(), ensure_ascii=False, indent=4))
 
 
 if __name__ == '__main__':
