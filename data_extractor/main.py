@@ -1,8 +1,8 @@
 import json
 import sys
 
-from data_sniffer import DataSniffer
-from src_helper import SrcHelper
+from data_extractor.data_sniffer import DataSniffer
+from data_extractor.src_helper import SrcHelper
 
 
 def main():
