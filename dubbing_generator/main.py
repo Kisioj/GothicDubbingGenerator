@@ -1,10 +1,13 @@
 import argparse
 import json
 import os
+import sys
 
 from google.cloud import texttospeech
 from gtts import gTTS
 from pydub import AudioSegment
+
+from gui.gui import Gui
 
 
 OUTPUT_DIR = 'output'
@@ -33,7 +36,7 @@ def main():
     )
     parser.add_argument('--lang', '-l', default='pl', help='dubbing language (default=pl)')
     parser.add_argument(
-        '--gender', '-g',
+        '--gender', '-s',
         default='male',
         type=str,
         choices=GENDERS,
@@ -45,9 +48,13 @@ def main():
         type=lambda x: does_file_exist(parser, x),
         metavar="KEY_FILE"
     )
+    parser.add_argument('--gui', '-g', action='store_true', help='run gui mode')
 
     args = parser.parse_args()
     gender = GENDERS[args.gender]
+
+    if args.service_key:
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = args.service_key
 
     with open(args.data_path) as file:
         data = json.loads(file.read())
@@ -55,13 +62,20 @@ def main():
     if not os.path.exists(OUTPUT_DIR):
         os.mkdir(OUTPUT_DIR)
 
+    if args.gui:
+        if args.service_key:
+            gui = Gui(data, args.lang.upper(), args.gender.upper())
+            gui.run()
+            return
+        else:
+            print("Google cloud service key is required to use GUI mode!", file=sys.stderr)
+
     ai_outputs = []
     for npc in data:
         for ai_output in npc['ai_outputs']:
             ai_outputs.append((ai_output['wav_filename'], ai_output['text']))
 
     if args.service_key:
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = args.service_key
         for i, ai_output in enumerate(ai_outputs):
             sound_filename, text = ai_output
             sound_path = os.path.join(OUTPUT_DIR, sound_filename)
