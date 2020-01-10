@@ -73,16 +73,16 @@ def main():
     ai_outputs = []
     for npc in data:
         for ai_output in npc['ai_outputs']:
-            ai_outputs.append((ai_output['wav_filename'], ai_output['text']))
+            ai_outputs.append((ai_output['wav_filename'], ai_output['text'], npc))
 
     if args.service_key:
         for i, ai_output in enumerate(ai_outputs):
-            sound_filename, text = ai_output
+            sound_filename, text, npc = ai_output
             sound_path = os.path.join(OUTPUT_DIR, sound_filename)
-            generate_advanced_voice(sound_path, text, args.lang, gender)
+            generate_advanced_voice(sound_path, text, npc, args.lang, gender)
             print(f'\r{i}/{len(ai_outputs)} {sound_filename}.wav')
     else:
-        for i, ai_output in enumerate(ai_outputs):
+        for i, ai_output, _ in enumerate(ai_outputs):
             sound_filename, text = ai_output
             sound_path = os.path.join(OUTPUT_DIR, sound_filename)
             generate_simple_voice(sound_path, text, args.lang, gender)
@@ -100,25 +100,59 @@ def generate_simple_voice(sound_path, text, lang, gender):
     os.remove(mp3_path)
 
 
-def generate_advanced_voice(sound_path, text, lang, gender):
-    wav_path = sound_path + '.wav'
+'''
+# from gui.gui import create_sound
 
-    client = texttospeech.TextToSpeechClient()
 
-    voices = tuple(client.list_voices(lang).voices)
-    for voice_params in voices:
-        if voice_params.ssml_gender == gender:
-            break
-
+def create_sound(client, wav_path, text, language, voice, pitch, speed):
     voice = texttospeech.types.VoiceSelectionParams(
-        language_code=voice_params.language_codes[0],
-        name=voice_params.name,
+        language_code=language,
+        name=voice,
     )
 
     audio_config = texttospeech.types.AudioConfig(
         audio_encoding=texttospeech.enums.AudioEncoding.LINEAR16,
-        pitch=0,
-        speaking_rate=1,
+        pitch=pitch,
+        speaking_rate=speed,
+    )
+
+    synthesis_input = texttospeech.types.SynthesisInput(text=text)
+    response = client.synthesize_speech(synthesis_input, voice, audio_config)
+
+    with open(wav_path, 'wb') as out:
+        out.write(response.audio_content)
+
+'''
+
+
+def generate_advanced_voice(sound_path, text, npc, lang, gender):
+    language = npc.get('language', lang)
+    voice_name = npc.get('voice')
+    pitch = npc.get('pitch', 0.0)
+    speed = npc.get('speed', 1.0)
+
+
+    wav_path = sound_path + '.wav'
+
+    client = texttospeech.TextToSpeechClient()
+
+    if not voice_name:
+        voices = tuple(client.list_voices(language).voices)
+        for voice_params in voices:
+            if voice_params.ssml_gender == gender:
+                voice_name = voice_params.name
+                language = voice_params.language_codes[0]
+                break
+
+    voice = texttospeech.types.VoiceSelectionParams(
+        language_code=language,
+        name=voice_name,
+    )
+
+    audio_config = texttospeech.types.AudioConfig(
+        audio_encoding=texttospeech.enums.AudioEncoding.LINEAR16,
+        pitch=pitch,
+        speaking_rate=speed,
     )
 
     synthesis_input = texttospeech.types.SynthesisInput(text=text)
