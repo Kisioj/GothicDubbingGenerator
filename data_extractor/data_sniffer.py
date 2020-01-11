@@ -104,6 +104,7 @@ class InitializationVisitor(DaedalusVisitor):
 
 
 class DataSniffingVisitor(DaedalusVisitor):
+    SELF = "SELF"
     C_INFO = "C_INFO"
     C_NPC = "C_NPC"
     NPC_DEFAULT = "NPC_DEFAULT"
@@ -113,6 +114,7 @@ class DataSniffingVisitor(DaedalusVisitor):
     NAME = "NAME"
     AI_OUTPUT = "AI_OUTPUT"
     INFO_ADDCHOICE = "INFO_ADDCHOICE"
+    TR_CHANGESPEAKER = "TR_CHANGESPEAKER"
     SPECIAL_CHAR_PATTERN = re.compile('[.()[\\]]')
 
 
@@ -127,6 +129,9 @@ class DataSniffingVisitor(DaedalusVisitor):
         self.npc_active = None
         self.info_active = None
         self.func_active = None
+
+        self.original_self_2_npc = None  # trialogs
+        self.self_2_npc = None  # trialogs
 
     def visitInstanceDef(self, ctx: DaedalusParser.InstanceDefContext):
         parent_ctx = ctx.parentReference()
@@ -164,6 +169,13 @@ class DataSniffingVisitor(DaedalusVisitor):
 
     def visitFunctionDef(self, ctx: DaedalusParser.FunctionDefContext):
         self.func_active = ctx.nameNode().getText().upper()
+
+        self.self_2_npc = DataSniffer.UNKNOWN_NPC
+        c_info_instance = self.func_2_info.get(self.func_active)
+        if c_info_instance and c_info_instance.npc:
+            self.self_2_npc = c_info_instance.npc
+        self.original_self_2_npc = self.self_2_npc
+
         super().visitFunctionDef(ctx)
         self.func_active = None
 
@@ -172,10 +184,17 @@ class DataSniffingVisitor(DaedalusVisitor):
         if identifier == self.AI_OUTPUT:
             line = self.lines[ctx.stop.line-1]
             c_info_instance = self.func_2_info.get(self.func_active)
-            AIOutput(ctx, c_info_instance, DataSniffer, line)
+            AIOutput(ctx, c_info_instance, DataSniffer, line, self.self_2_npc)
 
         elif identifier == self.INFO_ADDCHOICE:
             _, _, func_ref_ctx = ctx.expression()
             function_identifier = func_ref_ctx.getText().upper()
             c_info_instance = self.func_2_info.get(self.func_active)
             self.func_2_info[function_identifier] = c_info_instance
+
+        elif identifier == self.TR_CHANGESPEAKER:
+            npc_ref = ctx.expression()[0].getText().upper()
+            if npc_ref == self.SELF:
+                self.self_2_npc = self.original_self_2_npc
+            else:
+                self.self_2_npc = self.id_2_npc[npc_ref]

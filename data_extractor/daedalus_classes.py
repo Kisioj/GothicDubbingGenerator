@@ -44,7 +44,9 @@ class AIOutput:
             ctx: DaedalusParser.FunctionCallContext,
             c_info_instance: Union[CInfo, None],
             data_sniffer,
-            line: str):
+            line: str,
+            self_2_npc,
+    ):
 
         speaker, listener, name = ctx.expression()
         self.speaker = speaker.getText().upper()
@@ -54,10 +56,7 @@ class AIOutput:
         if self.speaker == AIOutput.OTHER:
             c_npc_instance = data_sniffer.PLAYER_NPC
         else:
-            if c_info_instance and c_info_instance.npc:
-                c_npc_instance = c_info_instance.npc
-            else:
-                c_npc_instance = data_sniffer.UNKNOWN_NPC
+            c_npc_instance = self_2_npc
 
         self.c_info_instance = c_info_instance
         self.c_npc_instance = c_npc_instance
