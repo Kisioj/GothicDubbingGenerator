@@ -104,6 +104,7 @@ class InitializationVisitor(DaedalusVisitor):
 
 
 class DataSniffingVisitor(DaedalusVisitor):
+    SELF = "SELF"
     C_INFO = "C_INFO"
     C_NPC = "C_NPC"
     NPC_DEFAULT = "NPC_DEFAULT"
@@ -113,10 +114,10 @@ class DataSniffingVisitor(DaedalusVisitor):
     NAME = "NAME"
     AI_OUTPUT = "AI_OUTPUT"
     INFO_ADDCHOICE = "INFO_ADDCHOICE"
+    TR_CHANGESPEAKER = "TR_CHANGESPEAKER"
     SPECIAL_CHAR_PATTERN = re.compile('[.()[\\]]')
 
-
-    func_2_info = {}
+    func_2_data_dict = {}
 
     def __init__(self, lines, id_2_npc, id_2_info, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -126,6 +127,8 @@ class DataSniffingVisitor(DaedalusVisitor):
 
         self.npc_active = None
         self.info_active = None
+
+        self.func_active_stack = []
         self.func_active = None
 
     def visitInstanceDef(self, ctx: DaedalusParser.InstanceDefContext):
@@ -160,22 +163,77 @@ class DataSniffingVisitor(DaedalusVisitor):
             if reference_identifier == self.NPC:
                 self.info_active.npc = self.id_2_npc.get(rvalue, DataSniffer.UNKNOWN_NPC)
             elif reference_identifier == self.INFORMATION:
-                self.func_2_info[rvalue] = self.info_active
+                self.func_2_data_dict[rvalue] = {
+                    'c_info_instance': self.info_active,
+                    'current_self': None,  # update in visitFunctionDef
+                    'original_self': None,
+                }
 
     def visitFunctionDef(self, ctx: DaedalusParser.FunctionDefContext):
-        self.func_active = ctx.nameNode().getText().upper()
+        self.func_active_stack.append(ctx.nameNode().getText().upper())
+        self.func_active = self.func_active_stack[-1]
+
+        self_2_npc = DataSniffer.UNKNOWN_NPC
+        data_dict = self.func_2_data_dict.get(self.func_active)
+        if data_dict:
+            c_info_instance = data_dict['c_info_instance']
+            if c_info_instance and c_info_instance.npc:
+                self_2_npc = c_info_instance.npc
+
+            if not data_dict['current_self']:
+                data_dict['current_self'] = self_2_npc
+                data_dict['original_self'] = self_2_npc
+
         super().visitFunctionDef(ctx)
-        self.func_active = None
+
+        self.func_active_stack.pop()
+
+        if len(self.func_active_stack) > 0:
+            self.func_active = self.func_active_stack[-1]
+        else:
+            self.func_active = None
 
     def visitFunctionCall(self, ctx: DaedalusParser.FunctionCallContext):
         identifier = ctx.nameNode().getText().upper()
         if identifier == self.AI_OUTPUT:
             line = self.lines[ctx.stop.line-1]
-            c_info_instance = self.func_2_info.get(self.func_active)
-            AIOutput(ctx, c_info_instance, DataSniffer, line)
+
+            data_dict = self.func_2_data_dict.get(self.func_active)
+            if data_dict:
+                c_info_instance = data_dict['c_info_instance']
+                current_self = data_dict['current_self']
+            else:
+                c_info_instance = None
+                current_self = DataSniffer.UNKNOWN_NPC
+
+            AIOutput(ctx, c_info_instance, DataSniffer, line, current_self)
 
         elif identifier == self.INFO_ADDCHOICE:
             _, _, func_ref_ctx = ctx.expression()
             function_identifier = func_ref_ctx.getText().upper()
-            c_info_instance = self.func_2_info.get(self.func_active)
-            self.func_2_info[function_identifier] = c_info_instance
+
+            data_dict = self.func_2_data_dict.get(self.func_active)
+            if data_dict:
+                c_info_instance = data_dict['c_info_instance']
+                current_self = data_dict['current_self']
+                original_self = data_dict['original_self']
+            else:
+                c_info_instance = None
+                current_self = DataSniffer.UNKNOWN_NPC
+                original_self = DataSniffer.UNKNOWN_NPC
+
+            self.func_2_data_dict[function_identifier] = {
+                'c_info_instance': c_info_instance,
+                'current_self': current_self,
+                'original_self': original_self,
+            }
+
+        elif identifier == self.TR_CHANGESPEAKER:
+            npc_ref = ctx.expression()[0].getText().upper()
+
+            data_dict = self.func_2_data_dict.get(self.func_active)
+
+            if npc_ref == self.SELF:
+                data_dict['current_self'] = data_dict['original_self']
+            else:
+                data_dict['current_self'] = self.id_2_npc[npc_ref]
