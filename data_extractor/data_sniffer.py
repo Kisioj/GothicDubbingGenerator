@@ -5,8 +5,8 @@ import sys
 
 from data_extractor.daedalus_classes import CNpc, CInfo, AIOutput
 from data_extractor.grammar.DaedalusLexer import DaedalusLexer
-from data_extractor.grammar import DaedalusParser
-from data_extractor.grammar import DaedalusVisitor
+from data_extractor.grammar.DaedalusParser import DaedalusParser
+from data_extractor.grammar.DaedalusVisitor import DaedalusVisitor
 from data_extractor.syntax_error_listener import SyntaxErrorListener
 
 

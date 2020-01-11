@@ -1,6 +1,6 @@
 from typing import Union
 
-from data_extractor.grammar import DaedalusParser
+from data_extractor.grammar.DaedalusParser import DaedalusParser
 
 
 class CInstance:
