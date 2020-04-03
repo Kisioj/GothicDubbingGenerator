@@ -13,8 +13,8 @@ def main():
 
     data_sniffer = DataSniffer()
     # files_paths = [
-    #     '/home/kisioj/Desktop/TheHistoryOfKhorinis/Scripts/Content/Story/NPC/BAU_8002_Allan.d',
-    #     '/home/kisioj/Desktop/TheHistoryOfKhorinis/Scripts/Content/Story/Dialoge/DIA_BAU_8002_Allan.d',
+    #     '/home/kisioj/Desktop/Gothic/Scripts/Content/Story/NPC/BAU_8002_Allan.d',
+    #     '/home/kisioj/Desktop/Gothic/Scripts/Content/Story/Dialoge/DIA_BAU_8002_Allan.d',
     # ]
     for i, file_path in enumerate(files_paths):
         print(f'\r{i}/{len(files_paths)} {file_path}')
