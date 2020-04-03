@@ -4,6 +4,10 @@ Automatically generating dubbing for Gothic I and Gothic II using Google Text-To
 
 ### Install
 
+First you need to install Python3 [here](https://www.python.org/).
+
+**Alert** When installing Python on Windows you need to check `ADD PYTHON TO PATH` checkbox. Also, in command line you run python using `python` command instead of `python3` (version for Linux & macOS).
+
 ```bash
 $ python3 -m pip install -r requirements.txt
 ```
@@ -51,7 +55,11 @@ $ python3 config_generator.py
 
 ### Dubbing generator
 
-First you need to generate Google [Text-to-Speech](https://cloud.google.com/text-to-speech) API Key and download it in `json` format. Then you can use `save.json` and API Key to generate dubbing.
+First you need to generate Google [Text-to-Speech](https://cloud.google.com/text-to-speech) API Key and download it in `json` format.
+Instruction to generate API Key can be found [here](https://www.miarec.com/doc/administration-guide/doc997).
+
+
+
 
 Usage:
 ```bash
