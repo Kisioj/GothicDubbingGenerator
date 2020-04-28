@@ -109,10 +109,15 @@ def main():
 
     ai_outputs_len = len(ai_outputs)
 
+    # with open('output/metadata.json') as file:
+    #     content = file.read()
+    # metadata = json.loads(content)
+
     if args.service_key:
         print('Generating Advanced Dialogues')
         for i, ai_output in enumerate(ai_outputs):
             sound_filename, text, npc = ai_output
+
             if sound_filename in wavs_generated:
                 print(f'\r{i}/{ai_outputs_len} {sound_filename}.wav - ALREADY EXISTS')
                 continue
@@ -120,17 +125,20 @@ def main():
             sound_path = os.path.join(OUTPUT_DIR, sound_filename)
             generate_advanced_voice(sound_path, text, npc, args.lang, gender)
             print(f'\r{i}/{ai_outputs_len} {sound_filename}.wav')
-    else:
-        print('Generating Basic Dialogues (NO API KEY GIVEN)')
-        for i, ai_output, _ in enumerate(ai_outputs):
-            sound_filename, text = ai_output
-            if sound_filename in wavs_generated:
-                print(f'\r{i}/{ai_outputs_len} {sound_filename}.wav - ALREADY EXISTS')
-                continue
 
-            sound_path = os.path.join(OUTPUT_DIR, sound_filename)
-            generate_simple_voice(sound_path, text, args.lang, gender)
-            print(f'\r{i}/{ai_outputs_len} {sound_filename}.wav')
+    else:
+        assert False
+    # else:
+    #     print('Generating Basic Dialogues (NO API KEY GIVEN)')
+    #     for i, ai_output, _ in enumerate(ai_outputs):
+    #         sound_filename, text = ai_output
+    #         if sound_filename in wavs_generated:
+    #             print(f'\r{i}/{ai_outputs_len} {sound_filename}.wav - ALREADY EXISTS')
+    #             continue
+    #
+    #         sound_path = os.path.join(OUTPUT_DIR, sound_filename)
+    #         generate_simple_voice(sound_path, text, args.lang, gender)
+    #         print(f'\r{i}/{ai_outputs_len} {sound_filename}.wav')
 
 
 def generate_simple_voice(sound_path, text, lang, gender):

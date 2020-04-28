@@ -1,6 +1,6 @@
 from typing import Union
 
-from data_extractor.grammar.DaedalusParser import DaedalusParser
+from grammar.DaedalusParser import DaedalusParser
 
 
 class CInstance:
@@ -69,5 +69,5 @@ class AIOutput:
     def serialize(self):
         return {
             'wav_filename': self.name,
-            'text': self.comment,
+            'text': self.comment.lower(),
         }

@@ -3,11 +3,11 @@ import antlr4
 import re
 import sys
 
-from data_extractor.daedalus_classes import CNpc, CInfo, AIOutput
-from data_extractor.grammar.DaedalusLexer import DaedalusLexer
-from data_extractor.grammar.DaedalusParser import DaedalusParser
-from data_extractor.grammar.DaedalusVisitor import DaedalusVisitor
-from data_extractor.syntax_error_listener import SyntaxErrorListener
+from daedalus_classes import CNpc, CInfo, AIOutput
+from grammar.DaedalusLexer import DaedalusLexer
+from grammar.DaedalusParser import DaedalusParser
+from grammar.DaedalusVisitor import DaedalusVisitor
+from syntax_error_listener import SyntaxErrorListener
 
 
 class DataSniffer:

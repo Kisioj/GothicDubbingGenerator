@@ -3,6 +3,7 @@ __pycache__
 *.json
 *.wav
 *.mp3
+*.orig
 venv/
 
 # ANTLR4
