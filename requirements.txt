@@ -3,3 +3,4 @@ asciimatics==1.11.0
 gTTS==2.1.0
 google-cloud-texttospeech==0.5.0
 pydub==0.23.1
+psutil==5.7.0

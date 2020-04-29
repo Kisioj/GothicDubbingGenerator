@@ -1,13 +1,12 @@
 import argparse
-import json
 import os
-import sys
 from glob import glob
 
 from google.cloud import texttospeech
 
 import utils
 import settings
+from generate_cache import generate_cache_json
 
 
 def is_cached(npc, ai_output, cache):
@@ -22,18 +21,9 @@ def is_cached(npc, ai_output, cache):
     return row == cached_row
 
 
-def generate_cache_json(data):
-    cache = {}
-    for row in data:
-        value = (row['speed'], row['pitch'], row['voice'])
-        for ai_output in row['ai_outputs']:
-            key = ai_output['wav_filename']
-            cache[key] = value
-
-    utils.save_to_file(cache, settings.CACHE_JSON_PATH)
-
-
 def main():
+    os.system('ulimit -n 10000')
+
     parser = argparse.ArgumentParser(description='Gothic Dubbing Generator')
     parser.add_argument(
         'key_path',
@@ -100,13 +90,13 @@ def main():
             continue
 
         sound_path = os.path.join(settings.WAV_DIR_PATH, sound_filename)
-        # generate_advanced_voice(sound_path, text, npc)
+        generate_advanced_voice(sound_path, text, npc)
         print(f'{i}/{ai_outputs_len} {sound_filename}.WAV', end='')
         if sound_filename in wavs:
             print(' - OVERWRITING', end='')
         print()
 
-    generate_cache_json(data)
+    generate_cache_json(data, wavs)
 
 
 def generate_advanced_voice(sound_path, text, npc):
