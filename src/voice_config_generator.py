@@ -116,6 +116,7 @@ class VoiceConfigGenerator:
                     f"doesn't exist in code anymore, remove it from `voices.json` "
                     f"or add flag \"future\": true, to his data"
                 )
+            current_row.pop('active')
 
         if self.errors_count:
             print(f'{self.errors_count} errors found. '

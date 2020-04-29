@@ -59,12 +59,11 @@ class AIOutput:
         speaker, listener, name = ctx.expression()
         self.speaker = speaker.getText().upper()
         self.listener = listener.getText().upper()
-        self.name = name.getText().strip('"')
+        self.name = name.getText().strip('"').upper()
 
-        name_upper = self.name.upper()
-        if name_upper in AIOutput.cache:
+        if self.name in AIOutput.cache:
             return
-        AIOutput.cache.add(name_upper)
+        AIOutput.cache.add(self.name)
 
         if self.speaker == AIOutput.OTHER:
             c_npc_instance = data_sniffer.PLAYER_NPC

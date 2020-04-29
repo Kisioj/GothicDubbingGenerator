@@ -1,157 +1,123 @@
 import argparse
 import json
 import os
+import sys
 from glob import glob
 
 from google.cloud import texttospeech
-from gtts import gTTS
-from pydub import AudioSegment
 
-from utils import is_valid_file
-
-OUTPUT_DIR = 'output'
+import utils
+import settings
 
 
-# def is_valid_file(parser, arg):
-#     if not os.path.exists(arg):
-#         parser.error(f"The file {arg} does not exist!")
-#     else:
-#         return arg
+def is_cached(npc, ai_output, cache):
+    wav_filename = ai_output['wav_filename']
 
-# def does_file_exist(parser, arg):
-#     if not os.path.isfile(arg):
-#         parser.error("The file %s does not exist!" % arg)
-#     else:
-#         return arg
+    if wav_filename not in cache:
+        return False
+
+    row = [npc['speed'], npc['pitch'], npc['voice']]
+    cached_row = cache[wav_filename]
+
+    return row == cached_row
+
+
+def generate_cache_json(data):
+    cache = {}
+    for row in data:
+        value = (row['speed'], row['pitch'], row['voice'])
+        for ai_output in row['ai_outputs']:
+            key = ai_output['wav_filename']
+            cache[key] = value
+
+    utils.save_to_file(cache, settings.CACHE_JSON_PATH)
 
 
 def main():
     parser = argparse.ArgumentParser(description='Gothic Dubbing Generator')
     parser.add_argument(
-        'data_path',
-        help='path to json file with data',
-        type=lambda path: is_valid_file(parser, path),
-        metavar="FILE"
+        'key_path',
+        type=lambda src_path: utils.is_valid_file(parser, src_path),
+        help='path to google service api key.json file'
     )
 
     parser.add_argument(
-        '--lang', '-l',
-        default='pl',
-        help='dubbing language (default=pl)'
-    )
-
-    parser.add_argument(
-        '--gender', '-s',
-        default='male',
-        type=str,
-        choices=GENDERS,
-        help='voice gender (default=male)'
-    )
-
-    parser.add_argument(
-        '--service-key', '-k',
-        help='path to google cloud service key (.json)',
-        type=lambda x: does_file_exist(parser, x),
-        metavar="KEY_FILE"
-    )
-
-    parser.add_argument(
-        '--update', '-u',
+        '--reset-cache',
         action='store_true',
-        help='do not create already existing wavs'
+        help='remove cache.json before launching'
+    )
+
+    parser.add_argument(
+        '-v',
+        '--verbose',
+        action='store_true',
+        help='display generation progress'
     )
 
     args = parser.parse_args()
-    gender = GENDERS[args.gender]
+    if args.key_path:
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = args.key_path
 
-    if args.service_key:
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = args.service_key
+    voices = utils.load_json_from_file(settings.VOICES_JSON_PATH)
+    name_and_id_2_voice = {
+        f"{voice['name']}|{voice['identifier']}": voice
+        for voice in voices
+    }
 
-    with open(args.data_path) as file:
-        data = json.loads(file.read())
+    data = utils.load_json_from_file(settings.DIALOGUES_JSON_PATH)
+    for row in data:
+        name_and_id = f"{row['name']}|{row['identifier']}"
+        voice = name_and_id_2_voice[name_and_id]
+        row.update(voice)
 
-    if not os.path.exists(OUTPUT_DIR):
-        os.mkdir(OUTPUT_DIR)
+    cache = {}
+    if os.path.isfile(settings.CACHE_JSON_PATH):
+        cache = utils.load_json_from_file(settings.CACHE_JSON_PATH)
 
+    wavs = set(
+        os.path.basename(path)[:-4]
+        for path in glob(f"{settings.WAV_DIR_PATH}/*.WAV")
+    )
 
     ai_outputs = []
     wavs_to_generate = set()
     for npc in data:
         for ai_output in npc['ai_outputs']:
-            ai_outputs.append(
-                (ai_output['wav_filename'], ai_output['text'], npc)
-            )
-            wavs_to_generate.add(ai_output['wav_filename'])
+            wav_filename = ai_output['wav_filename']
+            text = ai_output['text']
 
-    if args.update:
-        wavs_generated = set(os.path.basename(path)[:-4] for path in glob(f"output/*.wav"))
-        wavs_generated &= wavs_to_generate
-        print(f'Found already generated {len(wavs_generated)} files.')
-    else:
-        wavs_generated = set()
+            ai_outputs.append((wav_filename, text, npc))
+            if not is_cached(npc, ai_output, cache):
+                wavs_to_generate.add(wav_filename)
 
     ai_outputs_len = len(ai_outputs)
 
-    # with open('output/metadata.json') as file:
-    #     content = file.read()
-    # metadata = json.loads(content)
+    for i, ai_output in enumerate(ai_outputs, start=1):
+        sound_filename, text, npc = ai_output
 
-    if args.service_key:
-        print('Generating Advanced Dialogues')
-        for i, ai_output in enumerate(ai_outputs):
-            sound_filename, text, npc = ai_output
+        if sound_filename not in wavs_to_generate:
+            print(f'{i}/{ai_outputs_len} {sound_filename}.WAV - CACHED')
+            continue
 
-            if sound_filename in wavs_generated:
-                print(f'\r{i}/{ai_outputs_len} {sound_filename}.wav - ALREADY EXISTS')
-                continue
+        sound_path = os.path.join(settings.WAV_DIR_PATH, sound_filename)
+        # generate_advanced_voice(sound_path, text, npc)
+        print(f'{i}/{ai_outputs_len} {sound_filename}.WAV', end='')
+        if sound_filename in wavs:
+            print(' - OVERWRITING', end='')
+        print()
 
-            sound_path = os.path.join(OUTPUT_DIR, sound_filename)
-            generate_advanced_voice(sound_path, text, npc, args.lang, gender)
-            print(f'\r{i}/{ai_outputs_len} {sound_filename}.wav')
-
-    else:
-        assert False
-    # else:
-    #     print('Generating Basic Dialogues (NO API KEY GIVEN)')
-    #     for i, ai_output, _ in enumerate(ai_outputs):
-    #         sound_filename, text = ai_output
-    #         if sound_filename in wavs_generated:
-    #             print(f'\r{i}/{ai_outputs_len} {sound_filename}.wav - ALREADY EXISTS')
-    #             continue
-    #
-    #         sound_path = os.path.join(OUTPUT_DIR, sound_filename)
-    #         generate_simple_voice(sound_path, text, args.lang, gender)
-    #         print(f'\r{i}/{ai_outputs_len} {sound_filename}.wav')
+    generate_cache_json(data)
 
 
-def generate_simple_voice(sound_path, text, lang, gender):
-    mp3_path = sound_path + '.mp3'
-    wav_path = sound_path + '.wav'
+def generate_advanced_voice(sound_path, text, npc):
+    language = npc['language']
+    voice_name = npc['voice']
+    pitch = npc['pitch']
+    speed = npc['speed']
 
-    tts = gTTS(text, lang=lang)
-    tts.save(mp3_path)
-    sound = AudioSegment.from_mp3(mp3_path)
-    sound.export(wav_path, format="wav")
-    os.remove(mp3_path)
-
-
-def generate_advanced_voice(sound_path, text, npc, lang, gender):
-    language = npc.get('language', lang)
-    voice_name = npc.get('voice')
-    pitch = npc.get('pitch', 0.0)
-    speed = npc.get('speed', 1.0)
-
-    wav_path = sound_path + '.wav'
+    wav_path = sound_path + '.WAV'
 
     client = texttospeech.TextToSpeechClient()
-
-    if not voice_name:
-        voices = tuple(client.list_voices(language).voices)
-        for voice_params in voices:
-            if voice_params.ssml_gender == gender:
-                voice_name = voice_params.name
-                language = voice_params.language_codes[0]
-                break
 
     voice = texttospeech.types.VoiceSelectionParams(
         language_code=language,
