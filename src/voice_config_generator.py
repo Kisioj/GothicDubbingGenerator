@@ -1,3 +1,4 @@
+import os
 import sys
 import random
 import json
@@ -25,8 +26,11 @@ class VoiceConfigGenerator:
         self.errors_count += 1
 
     def generate(self, filepath, new_data):
-        with open(filepath) as file:
-            current_data = json.loads(file.read())
+        current_data = []
+
+        if os.path.isfile(filepath):
+            with open(filepath) as file:
+                current_data = json.loads(file.read())
 
         for row in current_data:
             row['active'] = False
