@@ -4,7 +4,11 @@ __pycache__
 *.wav
 *.mp3
 *.orig
+*.backup
 venv/
+/output
+/tmp
+*.swp
 
 # ANTLR4
 *.interp
@@ -12,4 +16,4 @@ venv/
 
 # IDE
 .idea
-/tmp
+

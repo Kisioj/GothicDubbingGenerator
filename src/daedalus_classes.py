@@ -22,22 +22,30 @@ class CNpc(CInstance):
         super().__init__(identifier)
         self.name = name
         self.ai_outputs = []
+        self.gender = 'M'
 
-    def serialize(self):
-        return {
+    def serialize(self, with_dialogues=False, with_gender=False):
+        data = {
             'name': self.name,
             'identifier': self.identifier,
-            'ai_outputs': [
+        }
+        if with_dialogues:
+            data['ai_outputs'] = [
                 ai_output.serialize()
                 for ai_output in self.ai_outputs
                 if ai_output.comment
             ]
-        }
+
+        if with_gender:
+            data['gender'] = self.gender
+
+        return data
 
 
 class AIOutput:
     SELF = "SELF"
     OTHER = "OTHER"
+    cache = set()
 
     def __init__(
             self,
@@ -52,6 +60,11 @@ class AIOutput:
         self.speaker = speaker.getText().upper()
         self.listener = listener.getText().upper()
         self.name = name.getText().strip('"')
+
+        name_upper = self.name.upper()
+        if name_upper in AIOutput.cache:
+            return
+        AIOutput.cache.add(name_upper)
 
         if self.speaker == AIOutput.OTHER:
             c_npc_instance = data_sniffer.PLAYER_NPC

@@ -14,59 +14,26 @@ $ python3 -m pip install -r requirements.txt
 
 
 ### Data extractor
-This part analyzes scripts and generates `output.json` which contains information about characters and their dialog lines.
+This part analyzes scripts and generates following files in `output/metadata/` directory:
+
+- `dialogues.json` - informations about characters and their dialog lines 
+- `voices.json` - informations about characters and their voice settings (if this file exists, it's updated - new rows are added, but old ones aren't changed)
 
 Usage:
 ```bash
-$ python3 data_extractor/main.py PATH_TO_GOTHIC.SRC
-```
-Example:
-```bash
-$ python3 data_extractor/main.py "/home/kisioj/Desktop/TheHistoryOfKhorinis/Scripts/Content/Gothic.src"
+$ python3 src/extractor.py PATH_TO_GOTHIC.SRC [--verbose]
 ```
 
-
-### Data updater
-This part updates `output.json` and adds information about voice details of characters and saves it in `save.json`. For example, before updating, data could look like this:
-```json
-[
-    {
-        "name": "Player",
-        "identifier": null,
-        ...
-```
-and after updating it will look like this:
-```json
-[
-  {
-    "name": "Player",
-    "identifier": null,
-    "pitch": -1.6,
-    "speed": 1.0,
-    "voice": "pl-PL-Wavenet-C",
-    "language": "pl-PL",
-    ...
-```
-
-Usage:
-```bash
-$ python3 config_generator.py
-```
+Once data is generated. You can customize `voices.json` to your needs.
 
 ### Dubbing generator
 
 First you need to generate Google [Text-to-Speech](https://cloud.google.com/text-to-speech) API Key and download it in `json` format.
 Instruction to generate API Key can be found [here](https://www.miarec.com/doc/administration-guide/doc997).
 
-
-
-
 Usage:
 ```bash
-$ python3 dubbing_generator/main.py PATH_TO_SAVE.JSON -k PATH_TO_API_KEY
+$ python3 src/generator.py PATH_TO_API_KEY.JSON [--verbose]
 ```
 
-Example:
-```bash
-$ python3 dubbing_generator/main.py save.json -k "/home/kisioj/Desktop/67308-83a2c6f03945.json"
-```
+All dialogues are generated in `output` directory.

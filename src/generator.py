@@ -1,30 +1,28 @@
 import argparse
 import json
 import os
-import sys
 from glob import glob
 
 from google.cloud import texttospeech
 from gtts import gTTS
 from pydub import AudioSegment
 
-from gui.gui import Gui
-
+from utils import is_valid_file
 
 OUTPUT_DIR = 'output'
 
 
-def does_file_exist(parser, arg):
-    if not os.path.isfile(arg):
-        parser.error("The file %s does not exist!" % arg)
-    else:
-        return arg
+# def is_valid_file(parser, arg):
+#     if not os.path.exists(arg):
+#         parser.error(f"The file {arg} does not exist!")
+#     else:
+#         return arg
 
-
-GENDERS = {
-    'male': 1,
-    'female': 2,
-}
+# def does_file_exist(parser, arg):
+#     if not os.path.isfile(arg):
+#         parser.error("The file %s does not exist!" % arg)
+#     else:
+#         return arg
 
 
 def main():
@@ -32,7 +30,7 @@ def main():
     parser.add_argument(
         'data_path',
         help='path to json file with data',
-        type=lambda x: does_file_exist(parser, x),
+        type=lambda path: is_valid_file(parser, path),
         metavar="FILE"
     )
 
@@ -58,13 +56,6 @@ def main():
     )
 
     parser.add_argument(
-        '--gui',
-        '-g',
-        action='store_true',
-        help='run gui mode'
-    )
-
-    parser.add_argument(
         '--update', '-u',
         action='store_true',
         help='do not create already existing wavs'
@@ -82,14 +73,6 @@ def main():
     if not os.path.exists(OUTPUT_DIR):
         os.mkdir(OUTPUT_DIR)
 
-    if args.gui:
-        if args.service_key:
-            gui = Gui(data, args.lang.upper(), args.gender.upper())
-            gui.run()
-            return
-        else:
-            print("Google cloud service key is required to use GUI mode!",
-                  file=sys.stderr)
 
     ai_outputs = []
     wavs_to_generate = set()

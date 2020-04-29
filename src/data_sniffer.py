@@ -53,9 +53,16 @@ class DataSniffer:
         sniffing_visitor = DataSniffingVisitor(lines, self.id_2_npc, self.id_2_info)
         sniffing_visitor.visit(parse_tree)
 
-    def get_data(self):
+    def get_dialogues_data(self):
         return [
-            npc.serialize()
+            npc.serialize(with_dialogues=True)
+            for npc in self.id_2_npc.values()
+            if npc.ai_outputs
+        ]
+
+    def get_npc_data(self):
+        return [
+            npc.serialize(with_gender=True)
             for npc in self.id_2_npc.values()
             if npc.ai_outputs
         ]
@@ -116,6 +123,7 @@ class DataSniffingVisitor(DaedalusVisitor):
     INFO_ADDCHOICE = "INFO_ADDCHOICE"
     TR_CHANGESPEAKER = "TR_CHANGESPEAKER"
     SPECIAL_CHAR_PATTERN = re.compile('[.()[\\]]')
+    B_SETNPCVISUAL = "B_SETNPCVISUAL"
 
     func_2_data_dict = {}
 
@@ -237,3 +245,7 @@ class DataSniffingVisitor(DaedalusVisitor):
                 data_dict['current_self'] = data_dict['original_self']
             else:
                 data_dict['current_self'] = self.id_2_npc[npc_ref]
+
+        elif identifier == self.B_SETNPCVISUAL and self.npc_active:
+            self.npc_active.gender = ctx.expression()[1].getText()[0].upper()
+
