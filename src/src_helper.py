@@ -33,7 +33,7 @@ class SrcHelper:
                 paths.append(full_path)
                 paths.extend(cls.get_paths(full_path))
             else:
-                if os.path.splitext(full_path)[1] == ".d":
+                if os.path.splitext(full_path)[1].lower() == ".d":
                     paths.append(full_path)
         return paths
 

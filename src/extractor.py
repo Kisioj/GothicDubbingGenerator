@@ -41,7 +41,10 @@ def main():
     for i, file_path in enumerate(files_paths, start=1):
         if args.verbose:
             print(f'\r{i}/{len(files_paths)} {file_path}')
-        data_sniffer.sniff(file_path)
+        try:
+            data_sniffer.sniff(file_path)
+        except UnicodeDecodeError:
+            print('UnicodeDecodeError')
 
     save_to_file(data_sniffer.get_dialogues_data(), settings.DIALOGUES_JSON_PATH)
 
