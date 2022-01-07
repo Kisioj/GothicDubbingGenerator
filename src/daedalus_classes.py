@@ -2,6 +2,9 @@ from typing import Union
 
 from grammar.DaedalusParser import DaedalusParser
 
+import logging
+logging.basicConfig(filename='output/debug.log', filemode='w', level=logging.DEBUG)
+
 
 class CInstance:
     def __init__(self, identifier):
@@ -54,7 +57,12 @@ class AIOutput:
             data_sniffer,
             line: str,
             current_self,
+            file_path: str,
     ):
+        if '//' not in line:
+            logging.error(f'{file_path}:{ctx.start.line}')
+            logging.error(line)
+            return
 
         speaker, listener, name = ctx.expression()
         self.speaker = speaker.getText().upper()
@@ -75,8 +83,13 @@ class AIOutput:
         c_npc_instance.ai_outputs.append(self)
 
         parts = line.split('//')
-        assert len(parts) == 2
-        self.comment = parts[-1].strip()
+        if line.count('//') > 1:
+            logging.debug(f'{file_path}:{ctx.start.line}')
+            logging.debug(line)
+            parts = line.split('//')
+            _, self.comment, *_ = parts
+        else:
+            self.comment = parts[-1].strip()
 
     def serialize(self):
         return {

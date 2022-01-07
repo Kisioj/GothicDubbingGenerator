@@ -50,7 +50,7 @@ class DataSniffer:
         init_visitor.visit(parse_tree)
         self.update_data(init_visitor.npcs, init_visitor.infos)
 
-        sniffing_visitor = DataSniffingVisitor(lines, self.id_2_npc, self.id_2_info)
+        sniffing_visitor = DataSniffingVisitor(lines, self.id_2_npc, self.id_2_info, file_path)
         sniffing_visitor.visit(parse_tree)
 
     def get_dialogues_data(self):
@@ -127,11 +127,12 @@ class DataSniffingVisitor(DaedalusVisitor):
 
     func_2_data_dict = {}
 
-    def __init__(self, lines, id_2_npc, id_2_info, *args, **kwargs):
+    def __init__(self, lines, id_2_npc, id_2_info, file_path, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.lines = lines
         self.id_2_npc = id_2_npc
         self.id_2_info = id_2_info
+        self.file_path = file_path
 
         self.npc_active = None
         self.info_active = None
@@ -214,7 +215,7 @@ class DataSniffingVisitor(DaedalusVisitor):
                 c_info_instance = None
                 current_self = DataSniffer.UNKNOWN_NPC
 
-            AIOutput(ctx, c_info_instance, DataSniffer, line, current_self)
+            AIOutput(ctx, c_info_instance, DataSniffer, line, current_self, self.file_path)
 
         elif identifier == self.INFO_ADDCHOICE:
             _, _, func_ref_ctx = ctx.expression()
