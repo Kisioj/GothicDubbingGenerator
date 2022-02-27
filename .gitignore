@@ -5,6 +5,7 @@ __pycache__
 *.mp3
 *.orig
 *.backup
+*.tmp
 venv/
 /output
 /tmp
