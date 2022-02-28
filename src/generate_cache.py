@@ -13,7 +13,7 @@ def generate_cache_json(data, wavs):
             key = ai_output['wav_filename']
             if key not in wavs:
                 continue
-            cache[key] = value
+            cache[key] = (*value, ai_output['text'])
 
     utils.save_to_file(cache, settings.CACHE_JSON_PATH)
 
